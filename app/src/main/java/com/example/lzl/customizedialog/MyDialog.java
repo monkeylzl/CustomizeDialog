@@ -2,10 +2,15 @@ package com.example.lzl.customizedialog;
 
 import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.WindowManager;
+import android.view.WindowManager.LayoutParams;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 
 /**
@@ -24,7 +29,17 @@ public class MyDialog extends Dialog {
     public MyDialog(Context context) {
         super(context, R.style.MyDialog);
     }
-
+    //侦听back键
+    private OnKeyListener keylistener = new DialogInterface.OnKeyListener() {
+        @Override
+        public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
+            if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    };
     /**
      * 设置取消按钮的显示内容和监听
      */
@@ -46,6 +61,12 @@ public class MyDialog extends Dialog {
         agree = (Button)findViewById(R.id.agree);
         disagree = (Button)findViewById(R.id.disagree);
         webView = (WebView)findViewById(R.id.webview);
+        WindowManager.LayoutParams layoutParams = getWindow().getAttributes();
+        layoutParams.dimAmount = 0.6F;
+        layoutParams.flags = layoutParams.flags | LayoutParams.FLAG_DIM_BEHIND;
+        getWindow().setAttributes(layoutParams);
+        //设置按back键 MyDialog不消失
+        setOnKeyListener(keylistener);
         //按空白处不能取消动画
         setCanceledOnTouchOutside(false);
         //初始化Webview
@@ -60,6 +81,7 @@ public class MyDialog extends Dialog {
      */
     private void webviewInit() {
         webView.loadUrl("http://www.baidu.com/");
+        webView.setWebViewClient(new WebViewClient());
     }
 
     /**

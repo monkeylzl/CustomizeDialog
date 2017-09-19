@@ -196,7 +196,7 @@ src/main/res/values/MyDialog.xml
 src/main/java/MyDialog.class
 ```java
 /**
- * Created by lzl on 2017/9/14.
+ * Created by lzl on 2017/9/16.
  */
 
 public class MyDialog extends Dialog {
@@ -211,7 +211,17 @@ public class MyDialog extends Dialog {
     public MyDialog(Context context) {
         super(context, R.style.MyDialog);
     }
-
+    //侦听back键
+    private OnKeyListener keylistener = new DialogInterface.OnKeyListener() {
+        @Override
+        public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
+            if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    };
     /**
      * 设置取消按钮的显示内容和监听
      */
@@ -233,6 +243,12 @@ public class MyDialog extends Dialog {
         agree = (Button)findViewById(R.id.agree);
         disagree = (Button)findViewById(R.id.disagree);
         webView = (WebView)findViewById(R.id.webview);
+        WindowManager.LayoutParams layoutParams = getWindow().getAttributes();
+        layoutParams.dimAmount = 0.6F;
+        layoutParams.flags = layoutParams.flags | LayoutParams.FLAG_DIM_BEHIND;
+        getWindow().setAttributes(layoutParams);
+        //设置按back键 MyDialog不消失
+        setOnKeyListener(keylistener);
         //按空白处不能取消动画
         setCanceledOnTouchOutside(false);
         //初始化Webview
@@ -246,7 +262,8 @@ public class MyDialog extends Dialog {
      * Webview 加载本地的 html(src/main/assets/xxxx.html) 资源，也可以加载网络资源(https://www.baidu.com/)
      */
     private void webviewInit() {
-        webView.loadUrl("file:///android_asset/xxxx.html ");
+        webView.loadUrl("http://www.baidu.com/");
+        webView.setWebViewClient(new WebViewClient());
     }
 
     /**
@@ -284,7 +301,6 @@ public class MyDialog extends Dialog {
         public void onDisagreeClick();
     }
 }
-
 ```
 
 #### 自定义布局的应用：
@@ -301,73 +317,57 @@ public class MyDialog extends Dialog {
 
 src/main/java/MainActivity.class
 ```java
-//Google PID
-// private static final String GOOGLE_PID = "xxxx";
-private MyDialog mDialog;
+public class MainActivity extends AppCompatActivity {
 
-//侦听back键
-private OnKeyListener keylistener = new DialogInterface.OnKeyListener() {
     @Override
-    public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
-            return true;
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        checkFirstRun();
+    }
+
+    //Google PID
+    //private static final String GOOGLE_PID = "xxxx";
+    private MyDialog mDialog;
+
+    public void checkFirstRun() {
+        boolean isFirstRun = getSharedPreferences("PREFERENCE", MODE_PRIVATE).getBoolean("isFirstRun", true);
+        if (isFirstRun ) {
+            //隐私规定提示弹出 Dialog
+            mDialog = new MyDialog(this);
+            mDialog.show();
+            mDialog.setAgreeOnclickListener(new MyDialog.onAgreeOnclickListener() {
+                @Override
+                public void onAgreeClick() {
+                    mDialog.dismiss();
+                    /**
+                     * 其他的方法
+                     */
+                    getSharedPreferences("PREFERENCE", MODE_PRIVATE)
+                        .edit()
+                        .putBoolean("isFirstRun", false)
+                        .apply();
+                }
+            });
+
+            mDialog.setDisagreeOnclickListener(new MyDialog.onDisagreeOnclickListener() {
+                @Override
+                public void onDisagreeClick() {
+                    android.os.Process.killProcess(android.os.Process.myPid());   //获取PID
+                    System.exit(0);   //常规java、c#的标准退出法，返回值为0代表正常退出
+                    getSharedPreferences("PREFERENCE", MODE_PRIVATE)
+                        .edit()
+                        .putBoolean("isFirstRun", true)
+                        .apply();
+                }
+            });
         } else {
-            return false;
+            /**
+             * 其他的方法
+             */
         }
     }
-};
-
-public void checkFirstRun() {
-       boolean isFirstRun = getSharedPreferences("PREFERENCE", MODE_PRIVATE).getBoolean("isFirstRun", true);
-      //  if (isFirstRun && Profile.Wireless_pid.equals(GOOGLE_PID)) {
-       if (isFirstRun) {
-           //隐私规定提示弹出 Dialog
-           mDialog = new MyDialog(this);
-           WindowManager.LayoutParams layoutParams = mDialog.getWindow().getAttributes();
-           layoutParams.dimAmount = 0.6F;
-           layoutParams.flags = layoutParams.flags | LayoutParams.FLAG_DIM_BEHIND;
-           mDialog.getWindow().setAttributes(layoutParams);
-           mDialog.show();
-           //设置按back键 MyDialog不消失
-           mDialog.setOnKeyListener(keylistener);
-
-           mDialog.setAgreeOnclickListener(new MyDialog.onAgreeOnclickListener() {
-               @Override
-               public void onAgreeClick() {
-                   mDialog.dismiss();
-                   jumpToHome();
-                   getSharedPreferences("PREFERENCE", MODE_PRIVATE)
-                       .edit()
-                       .putBoolean("isFirstRun", false)
-                       .apply();
-               }
-           });
-
-           mDialog.setDisagreeOnclickListener(new MyDialog.onDisagreeOnclickListener() {
-               @Override
-               public void onDisagreeClick() {
-                   android.os.Process.killProcess(android.os.Process.myPid());   //获取PID
-                   System.exit(0);   //常规java、c#的标准退出法，返回值为0代表正常退出
-                   getSharedPreferences("PREFERENCE", MODE_PRIVATE)
-                       .edit()
-                       .putBoolean("isFirstRun", true)
-                       .apply();
-               }
-           });
-       } else {
-         /**
-          * 其他的方法
-          */
-       }
-   }
-
-   @Override
-   protected void onCreate(Bundle savedInstanceState){
-     super.onCreate(savedInstanceState);
-     checkFirstRun();
-
-   }
-
+}
 ```
 
 有时半透明的黑色背景并不能展现，由于逻辑的复杂性，导致最终的 theme 的效果没有显示出来，这样为了确保它能够出现的关键,就是直接进行代码级别的再次情调属性参数，以确保能够能够正确显示自己的自定义效果（其实所有的效果都可以通过这种方式显示，这样会更加稳定，这时就可以完全的省略掉 styles.xml/layout.xml 一些资源的配置）
@@ -382,5 +382,5 @@ mDialog.getWindow().setAttributes(layoutParams);
 
 
 <div align=center>
-![](http://oo2m64upw.bkt.clouddn.com/17-9-16/55325813.jpg?imageView/3/w/200/h/300 )
+<img src="http://oo2m64upw.bkt.clouddn.com/17-9-16/55325813.jpg" width = "200" height = "350" alt="自定义 Dialog" align=center />
 </div>
