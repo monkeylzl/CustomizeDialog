@@ -1,7 +1,13 @@
 # CustomizeDialog
 自定义具有圆角的 Dialog
 
+主要参考的文章
+
 [自定义Dialog的详细步骤（实现自定义样式一般原理）](http://blog.csdn.net/oqihaogongyuan/article/details/50958659)
+
+[Android：首先运行弹出对话框](https://gxnotes.com/article/184585.html)
+
+[Android应用程序完全退出当前四种方法及实现代码](http://www.111cn.net/sj/android/84273.htm)
 
 #### 权限（Webview）
 src/main/AndroidManifest.xml
@@ -385,5 +391,5 @@ mDialog.getWindow().setAttributes(layoutParams);
 
 
 <div align=center>
-![](http://oo2m64upw.bkt.clouddn.com/17-9-16/55325813.jpg?imageView/3/w/200/h/300 )
+<img src="http://oo2m64upw.bkt.clouddn.com/17-9-16/55325813.jpg" width = "200" height = "350" alt="自定义 Dialog" align=center />
 </div>
